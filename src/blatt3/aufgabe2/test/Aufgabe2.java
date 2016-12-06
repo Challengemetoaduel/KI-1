@@ -4,11 +4,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.TreeSet;
+
+import javafx.collections.transformation.SortedList;
 
 public class Aufgabe2 {
   static ArrayList<ArrayList<Variable>> variables;
@@ -17,22 +21,87 @@ public class Aufgabe2 {
     LinkedHashSet<Arc> constraints = readInput();
 
     // arcConsistency3(new LinkedList<>(constraints));
+    LinkedList<Variable> sortedVars = new LinkedList<>();
 
-    ArrayList<Variable> assignment = new ArrayList<>(81);
+    for (ArrayList<Variable> row : variables) {
+      sortedVars.addAll(row);
+    }
+    sortedVars.sort(null);
 
-  }
+    backtrackingSearch(new LinkedList<>(constraints), sortedVars);
 
-  public static void backtrackingSearch(Queue<Arc> queue) {
-    recursiveBacktracking(new ArrayList<>(81), queue);
-  }
-
-  public static void recursiveBacktracking(ArrayList<Variable> assignment, Queue<Arc> queue) {
-    if (assignment.size() == 81) {
-      return;
+    for (ArrayList<Variable> row : variables) {
+      for (Variable var : row) {
+        System.out.print(var.value);
+      }
+      System.out.println();
     }
 
-    return;
   }
+
+  public static void backtrackingSearch(Queue<Arc> queue, LinkedList<Variable> sortedVars) {
+    recursiveBacktracking(new ArrayList<>(81), queue, sortedVars);
+  }
+
+  public static boolean recursiveBacktracking(ArrayList<Variable> assignment, Queue<Arc> queue,
+      LinkedList<Variable> sortedVars) {
+
+    sortedVars.sort(null);
+
+    System.out.println(sortedVars.size());
+    for (Variable var : sortedVars) {
+      System.out.println(var.printDomain());
+    }
+
+    if (assignment.size() == 81) {
+      return true;
+    }
+
+    Variable var = sortedVars.pollFirst();
+    Variable copyOfVar = new Variable(var);
+
+    // Queue<Arc> queue = new LinkedList<>();
+    // for (Variable neighbor : var.neighbors) {
+    // queue.add(new Arc(var, neighbor));
+    // }
+
+    if (var.domain.size() == 1) {
+      assignment.add(var);
+      for (int i : var.domain) {
+        var.setDomain(i);
+      }
+
+      boolean result = recursiveBacktracking(assignment, queue, sortedVars);
+      if (result) {
+        return result;
+      }
+      assignment.remove(var);
+      sortedVars.add(var);
+      return false;
+    }
+
+    else {
+      for (int value : copyOfVar.domain) {
+        var.setDomain(value);
+
+        if (arcConsistency3(new LinkedList<>(queue))) {
+          assignment.add(var);
+          boolean result = recursiveBacktracking(assignment, queue, sortedVars);
+          if (result) {
+            return result;
+          }
+          assignment.remove(var);
+        }
+      }
+
+      var.domain = new HashSet<>(copyOfVar.domain);
+      sortedVars.add(var);
+      return false;
+    }
+  }
+
+  // Could be better...
+  // public static LinkedList<Variable> selectUnassignedVariable() {}
 
   public static LinkedHashSet<Arc> readInput() {
     LinkedHashSet<Arc> arcs = new LinkedHashSet<>();
@@ -64,19 +133,25 @@ public class Aufgabe2 {
     return arcs;
   }
 
-  public static void arcConsistency3(Queue<Arc> queue) {
+  public static boolean arcConsistency3(Queue<Arc> queue) {
     while (!queue.isEmpty()) {
       Arc current = queue.poll();
 
-      if (removeInconsistentValues(current)) {
+      Boolean result = removeInconsistentValues(current);
+      // if (removeInconsistentValues(current) ) {
+      if (result == null) {
+        return false;
+      }
+      if (result) {
         for (Variable neighbor : current.first.neighbors) {
           queue.add(new Arc(neighbor, current.first));
         }
       }
     }
+    return true;
   }
 
-  public static boolean removeInconsistentValues(Arc current) {
+  public static Boolean removeInconsistentValues(Arc current) {
     boolean removed = false;
     Variable first = current.first;
     Variable second = current.second;
@@ -89,6 +164,9 @@ public class Aufgabe2 {
         iter.remove();
         removed = true;
       }
+    }
+    if (first.domain.size() == 0) {
+      return null;
     }
 
     return removed;
@@ -124,9 +202,10 @@ class Arc {
 }
 
 
-class Variable {
+class Variable implements Comparable<Variable> {
   int x;
   int y;
+  int value;
 
   HashSet<Integer> domain = new HashSet<>();
   LinkedHashSet<Variable> neighbors = new LinkedHashSet<>(24);
@@ -143,6 +222,14 @@ class Variable {
     } else {
       domain.add(value);
     }
+  }
+
+  public Variable() {};
+
+  public Variable(Variable that) {
+    this.x = that.x;
+    this.y = that.y;
+    this.domain = new HashSet<>(that.domain);
   }
 
   public LinkedList<Arc> setNeighbors(ArrayList<ArrayList<Variable>> variables) {
@@ -167,6 +254,16 @@ class Variable {
     }
 
     return arcs;
+  }
+
+  public void setValue(int value) {
+    this.value = value;
+  }
+
+  public void setDomain(int value) {
+    this.value = value;
+    this.domain.clear();
+    this.domain.add(value);
   }
 
   @Override
@@ -197,5 +294,10 @@ class Variable {
     builder.deleteCharAt(builder.length() - 1);
     builder.append("}");
     return builder.toString();
+  }
+
+  @Override
+  public int compareTo(Variable o) {
+    return Integer.compare(this.domain.size(), o.domain.size());
   }
 }
