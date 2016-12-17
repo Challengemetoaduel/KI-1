@@ -18,7 +18,7 @@ public class Aufgabe1 {
   public static void main(String[] args) throws FileNotFoundException {
     // Scanner in = new Scanner(System.in);
 
-    Scanner in = new Scanner(new File("src/blatt4/aufgabe1/test/eingabe.txt"));
+    Scanner in = new Scanner(new File("src/blatt4/eingabe.txt"));
     while (in.hasNextLine()) {
       int x = in.nextInt();
       int y = in.nextInt();
