@@ -40,7 +40,7 @@ public class Aufgabe2 {
   }
 
   public static void backtrackingSearch(Queue<Arc> queue, LinkedList<Variable> sortedVars) {
-    recursiveBacktracking(new ArrayList<>(81), queue, sortedVars);
+    recursiveBacktracking(new ArrayList<Variable>(81), queue, sortedVars);
   }
 
   public static boolean recursiveBacktracking(ArrayList<Variable> assignment, Queue<Arc> queue,
